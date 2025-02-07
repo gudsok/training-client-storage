@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Client Storage Demo</title>
+  </head>
+  <body>
+    <h1>Client Storage Demo</h1>
+
+    <button onclick="useLocalStorage()">Test LocalStorage</button>
+    <button onclick="useSessionStorage()">Test SessionStorage</button>
+    <button onclick="useIndexedDB()">Test IndexedDB</button>
+    <button onclick="useWebSQL()">Test WebSQL</button>
+    <button onclick="useLocalForage()">Test LocalForage</button>
+
+    <script>
+      // 1. Local Storage
+      function useLocalStorage() {
+        localStorage.setItem("username", "JohnDoe");
+        alert("LocalStorage: " + localStorage.getItem("username"));
+      }
+
+      // 2. Session Storage
+      function useSessionStorage() {
+        sessionStorage.setItem("sessionData", "HelloSession");
+        alert("SessionStorage: " + sessionStorage.getItem("sessionData"));
+      }
+
+      // 3. IndexedDB
+      function useIndexedDB() {
+        let request = indexedDB.open("DemoDB", 1);
+
+        request.onupgradeneeded = function (event) {
+          let db = event.target.result;
+          db.createObjectStore("users", { keyPath: "id" });
+        };
+
+        request.onsuccess = function (event) {
+          let db = event.target.result;
+          let transaction = db.transaction("users", "readwrite");
+          let store = transaction.objectStore("users");
+          store.put({ id: 1, name: "Alice" });
+
+          let getRequest = store.get(1);
+          getRequest.onsuccess = function () {
+            alert("IndexedDB: " + JSON.stringify(getRequest.result));
+          };
+        };
+      }
+
+      // 4. WebSQL (Deprecated)
+      function useWebSQL() {
+        let db = openDatabase("WebSQLDB", "1.0", "Test DB", 2 * 1024 * 1024);
+        db.transaction(function (tx) {
+          tx.executeSql("CREATE TABLE IF NOT EXISTS users (id unique, name)");
+          tx.executeSql("INSERT INTO users (id, name) VALUES (1, 'Bob')");
+          tx.executeSql("SELECT * FROM users", [], function (tx, results) {
+            alert("WebSQL: " + JSON.stringify(results.rows.item(0)));
+          });
+        });
+      }
+
+      // 5. LocalForage
+      function useLocalForage() {
+        localforage
+          .setItem("user", { name: "Charlie", age: 30 })
+          .then(() => {
+            return localforage.getItem("user");
+          })
+          .then((value) => {
+            alert("LocalForage: " + JSON.stringify(value));
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+  </body>
+</html>
